@@ -1,0 +1,102 @@
+#include "stm32f10x.h"
+#include "lcd1602.h"
+#include "delay.h"
+
+const uint16_t IO_Table[8] =
+{
+  LCD_D0,      LCD_D1, LCD_D2,   LCD_D3,
+  LCD_D4,      LCD_D5, LCD_D6,   LCD_D7
+}；
+
+void LCD1602_GPIOConfig( )
+{
+GPIO_InitTypeDef GPIO_InitStructure；
+RCC_APB2PeriphClockCmd（ LCD_DATA_RCC,ENABLE）；//開啟周邊裝置時脈
+  GPIO_InitStructure.GPIO_Pin = LCD_DP_ALL；//定義GPIO 腳位
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；//設定GPIO 頻率
+GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP；//設定GPIO 為推挽式輸出
+  GPIO_Init（LCD_DATA_IO, &GPIO_InitStructure）；
+  if（ LCD_CTRL_IO != LCD_DATA_IO）
+  {
+    //開啟GPIO 的時鐘
+    RCC_APB2PeriphClockCmd（ LCD_CTRL_RCC, ENABLE）；
+    GPIO_InitStructure.GPIO_Pin = LCD_RS|LCD_RW|LCD_EN；
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP；
+    GPIO_Init（LCD_CTRL_IO, &GPIO_InitStructure）；
+  }
+}
+
+void LCD1602_SetDataPort（ BYTE dat ）
+{
+  int i；
+  LCD_RESET_DP( )；
+
+  for（ i = 0； i < 8； i++）
+  {
+    if （ （（dat>>i） & 0x01） == 0x01 ）
+                LCD_DATA_IO->BSRR = IO_Table[i]；
+  }
+}
+
+void LCD1602_Write（ BYTE input, BYTE isCommand ）
+{
+  DelayUs（100）；
+  LCD_EN_LO；
+  if（ isCommand ） LCD_RS_LO； else LCD_RS_HI；
+  DelayUs（1）；
+  LCD_RW_LO；
+  DelayUs（1）；
+  LCD1602_SetDataPort（input）；
+  DelayUs（1）；
+  LCD_EN_HI；
+  DelayUs（2）；
+  LCD_EN_LO；
+}
+
+void LCD1602_WriteCommand（ BYTE cmd ）
+{
+  LCD1602_Write（cmd,1）；
+}
+
+void LCD1602_WriteData（ BYTE dat ）
+{
+  LCD1602_Write（dat,0）；
+}
+void LCD1602_Iintial（ void ）
+{
+  DelayMs（20）；
+  LCD1602_WriteCommand（ LCD_FUN_SET ）；
+  DelayMs（20）；
+  LCD1602_WriteCommand（ LCD_FUN_SET ）；
+  DelayUs（50）；
+  LCD1602_WriteCommand（ LCD_FUN_SET ）；
+  LCD1602_WriteCommand（ LCD_FUN_SET ）；
+  LCD1602_WriteCommand（ LCD_DISP_OFF ）；
+  LCD1602_WriteCommand（ LCD_DISP_CLR ）；
+  DelayMs（10）；
+  LCD1602_WriteCommand（ LCD_MODE_SET ）；
+  LCD1602_WriteCommand（ LCD_DISP_ON ）；
+  DelayMs（100）；
+
+  #if _DUBEG
+  本書設定在LCD 第1 列第0 行顯示You are the best!字樣
+  LCD1602_SetString（0,1,"You are the best"）；
+  本書在LCD 第0 列第2 行顯示Welcome!樣
+  LCD1602_SetString（2,0,"Welcome!"）；
+  DelayMs（2000）；
+  #endif
+}
+
+void LCD1602_SetChar（ BYTE x, BYTE y, char c ）
+{
+  LCD1602_WriteCommand（ LCD1602_AddrCmd（x,y） ）；
+  LCD1602_WriteData（c）；
+}
+void LCD1602_SetString（ BYTE x, BYTE y, char str[]）
+{
+  int i=0；
+  LCD1602_WriteCommand（ LCD1602_AddrCmd（x,y） ）；
+  while（ （str[i] != '\0'） && （i <= LCD1602_MAX_X） ）
+    LCD1602_WriteData（str[i++]）；
+}

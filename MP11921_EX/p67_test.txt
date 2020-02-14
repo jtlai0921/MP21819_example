@@ -1,0 +1,41 @@
+//Arduino 控制 I2C Module LCD 1602 字幕顯示
+#include <Wire.h>//引用 I2C 資料庫
+
+#include <LiquidCrystal_I2C.h>//引用 I2C 資料庫
+LiquidCrystal_I2C lcd（0x27,16,2）；   //設定 LCD 為 2 列 16 字元初始位置為   0x27
+//把  LiquidCrystal_I2C.cpp 內的結果  retuen 0；  改成  return 1；。 
+inline size_t LiquidCrystal_I2C：：write（uint8_t value）
+{
+  send（value, Rs）； 
+  return 1；
+}
+
+void setup( )
+{
+  lcd.init( )；  // lcd 初始化
+  lcd.begin（16, 2）；  //設定 LCD 尺寸 2 列各 16 個字元。
+  lcd.backlight( )；// 開啟背光
+  lcd.setCursor（0, 0）；  // 設定游標位置在第一行行首 lcd.print（
+  "Arduino & STM32!"）；  // 設定 LCD 螢幕開機第一列顯示字樣
+  lcd.setCursor（0, 1）；  // 設定游標位置在第二行行首 lcd.print（
+  "Gyro & Bluetooth"）；
+  for（int i = 0；  i < 3；  i++）//設定螢幕閃爍迴圈
+{
+lcd.backlight( )；  // 開啟背光
+delay（3000）；  //延遲 3000 毫秒
+
+
+lcd.noBacklight( )；  // 關閉背光
+delay（1500）；  //延遲 1500 毫秒
+}
+}
+
+void loop( )
+{
+lcd.backlight( )；// 開啟背光
+lcd.setCursor（0, 0）；  // 設定游標位置在第 1 行行首 lcd.print（
+"**Robotic Arm!**"）；  // 設定 LCD 螢幕第 1 列顯示字樣 
+lcd.setCursor（0,1）；  // 設定游標位置在第二行行首 lcd.print（
+"**Ultra Sound!**"）；  // 設定 LCD 螢幕第 2 列顯示字樣
+
+}

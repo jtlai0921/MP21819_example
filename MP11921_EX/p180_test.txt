@@ -1,0 +1,181 @@
+//==============================================================///
+		超音波感測藍芽無線傳輸程式
+//==============================================================
+
+#include "stm32f10x.h"//引用STM32F10x 資料庫
+#include "usart.h"//引用UART 資料庫
+#include "led.h"//引用LED 資料庫
+#include "RTC_Time.h"//引用RTC 資料庫
+#include <stdio.h>//引用STDIO 資料庫
+#define Trigger1 GPIO_ReadOutputDataBit（GPIOB,GPIO_Pin_3）//定義超音波1
+		觸發腳位
+#define Trigger2 GPIO_ReadOutputDataBit（GPIOB,GPIO_Pin_8）//定義超音波2
+		觸發腳位
+#define Echo1 GPIO_ReadInputDataBit（GPIOB,GPIO_Pin_4）//定義超音波1 回音腳
+		位
+#define Echo2 GPIO_ReadInputDataBit（GPIOB,GPIO_Pin_9）//定義超音波2 回音腳
+		位
+
+
+
+//==============================================================
+
+//==============================================================
+
+
+
+void Echo1Config( )//超音波回音函式
+{
+GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；//開啟外部時鐘
+GPIO_InitStructure.GPIO_Pin=GPIO_Pin_4；//超音波Echo 回饋訊號
+GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+
+Void Echo2Config( )
+{
+GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；//開啟外部時鐘
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9；//超音波反饋Echo 訊號
+GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；//設定GPIO 時脈
+GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；//設定為提升輸入
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；//GPIO 初始化設定
+}
+
+void Trigger1Config( )
+{
+GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；開啟外部時鐘
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_3； //Trigger 訊號腳位設定
+GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；//時脈設定
+GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；//設定上拉式輸入
+GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP；//推挽式輸出狀態
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+
+void Trigger2Config1( )
+{
+GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；//致能外部時鐘
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_8； //Pin8 超音波觸發腳位初始化
+GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；
+GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP；
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+
+int j；
+
+void My_Usart1_Send（char *string） //傳送訊息至 USART1
+{
+    while（*string）
+      {
+        /* USART1 */
+        USART_SendData（USART1, （unsigned short int） *string++）；
+        ///* 旗標狀態回饋 */
+        while （USART_GetFlagStatus（USART1, USART_FLAG_TC） == RESET）；
+    }
+}
+
+void parameter( )
+
+{
+    /******** 萬用通訊阜GPIO 初始化設定 ********/
+    GPIO_InitTypeDef GPIO_InitStructure；
+    USART_InitTypeDef USART_InitStructure；
+    /******** GPIOA USART1 RCC ********/
+    RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOA|RCC_APB2Periph_USART1,
+		ENABLE）；
+
+/********定義PA9 藍芽Tx 傳輸腳位為推挽式輸入並設定時脈與初始化********/
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9；PA9//藍芽Tx 傳輸腳位結構初始化
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；//設定GPIO 時脈為50
+		MHz
+     //設定腳位為複用推挽式輸入
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP；
+    GPIO_Init（GPIOA, &GPIO_InitStructure）； // PA9 初始化設定
+
+/********定義PA10 藍芽Rx 傳輸腳位為浮點輸出並設定時脈與初始化********/
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10；
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING；
+    //設定腳位為推挽式輸入
+    GPIO_Init（GPIOA, &GPIO_InitStructure）； // PA10 初始化設定
+
+/******** USART 串列傳輸檢查碼鮑率等參數格式初始化設定 ********/
+    USART_InitStructure.USART_BaudRate = 9600；
+     //設定鮑率USART（位元數/秒）為9600
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b；
+     //設定 USART 傳輸的資料位元為 8
+    USART_InitStructure.USART_StopBits = USART_StopBits_1；
+     // 設定 USART 停止位元為 1
+    USART_InitStructure.USART_Parity = USART_Parity_No；// 不使用同位元檢查
+    USART_InitStructure.USART_HardwareFlowControl=
+		USART_HardwareFlowControl_None；//不使用流量控制
+     // 設定 USART 模式為 Rx （接收） 、 Tx （傳送）
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx；
+    //套用以上 USART 設置，並初始化UART1
+    USART_Init（USART1, &USART_InitStructure）；
+    /******** 啟用 USART1 ********/
+    USART_Cmd（USART1, ENABLE）；
+    USART_ITConfig（USART1, USART_IT_RXNE, ENABLE）；
+    /* USART1 致能 */
+  }
+
+void RCC_Configuration（void）//系?時鐘配置
+{
+SystemInit( )；
+RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOA,ENABLE）；致能GPIO
+RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；
+RCC_APB2PeriphClockCmd（RCC_APB2Periph_USART1,ENABLE）；致能通訊阜
+RCC_APB1PeriphClockCmd（RCC_APB1Periph_TIM2,ENABLE）；致能定時器
+}
+
+
+
+//==============================================================
+// 主程式
+//==============================================================
+
+int main（void）//主程式（呼叫所有副程式）
+{
+    int i=0；
+    void My_Usart1_Send（char *string）； //傳送訊息至 USART1
+      Trigger1Config( )；//超音波Sensor1 觸發腳位
+Trigger2Config( )；//超音波Sensor2 觸發腳位
+Echo1Config( )；//超音波Sensor1 回音腳位
+    Echo2Config( )； //超音波Sensor2 回音腳位
+      LED_GPIO_Config( )；
+    RCC_Configuration( )；
+    USART1_Config( )；
+    RTC_Init( )；
+    SystemTick_Init( )；
+      parameter( )；
+
+while（1）
+{
+GPIO_SetBits（GPIOB,GPIO_Pin_3）；
+msDelay（20）；
+GPIO_ResetBits（GPIOB,GPIO_Pin_3）；
+
+if（Echo1==1）
+{
+USART_SendData（USART1,'b'）；
+}
+
+GPIO_SetBits（GPIOB,GPIO_Pin_8）；
+msDelay（20）；
+GPIO_ResetBits（GPIOB,GPIO_Pin_8）；
+
+  if（ Echo2 == 1）
+{
+USART_SendData（USART1,'a'）；
+}
+  }
+    }
+/**********************************************************************
+		***********************************
+    END FILE
+***********************************************************************
+		**********************************/

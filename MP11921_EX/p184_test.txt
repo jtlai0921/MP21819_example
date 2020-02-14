@@ -1,0 +1,36 @@
+
+#include <SoftwareSerial.h> // 引用程式庫
+SoftwareSerial BT（1, 0）； // 接收腳, 傳送腳// 定義連接藍牙模組的序列埠
+char val； // 儲存接收資料的變數
+int LED= 9； // 定義LED 腳位
+int LED1= 10；
+void setup( ) {
+int insize；
+  byte cmmd[20]；
+  if （（insize = BT.available( ) > 0）） //判斷是否有接收到藍牙訊息
+  {
+    for （int i = 0； i < insize； i++）
+    cmmd[i] = BT.read( )； //讀取藍牙資訊
+  }
+  BT.begin（9600）； // 設定HC-05 藍牙模組，AT 命令模式的連線速率。
+  pinMode（LED1, OUTPUT）；
+  pinMode（LED, OUTPUT）；
+  }
+void loop( )
+  {
+  if （BT.available( )） {// 若收到藍牙模組的資料，則送到「序列埠監控視窗」
+    val = BT.read( )；
+    if （val == 'a'） {
+      digitalWrite（LED, HIGH）；
+      delay（500）；
+      digitalWrite（LED, LOW）；
+      BT.println（"LED ON"）； // 回應命令發送端，告知「已開燈」
+ }
+else if （val == 'b'）
+    {
+      digitalWrite（LED1,HIGH）；
+      delay（500）；
+      digitalWrite（LED1, LOW）； // 回應命令發送端，告知「已關燈」
+      BT.println（"LED OFF"）； }
+  }
+}

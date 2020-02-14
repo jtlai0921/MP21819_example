@@ -1,0 +1,172 @@
+//超音波感測控制2 極6 線步進馬達正反轉程式
+#include "stm32f10x.h" //資料庫宣告引用
+#include "usart.h"
+#include "led.h"
+#include "RTC_Time.h"
+#include <stdio.h>
+#define Right GPIO_ReadInputDataBit（GPIOB,GPIO_Pin_4）
+#define Left GPIO_ReadInputDataBit（GPIOB,GPIO_Pin_9）
+#define Trigger1 GPIO_ReadOutputDataBit（GPIOB,GPIO_Pin_3）
+#define Trigger2 GPIO_ReadOutputDataBit（GPIOB,GPIO_Pin_8）
+
+void Delay （uint32_t nCount）
+{
+  for（； nCount != 0； nCount--）；
+}
+
+void InitialMotorPinInPutConfig( )
+{
+  GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_4；//超音波Echo 響應回饋
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+void InitialMotorPinOutPutConfig( )
+{
+
+  GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOA,ENABLE）；
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 |
+  GPIO_Pin_3；
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP； 設定GPIO 為推挽式輸出
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+  GPIO_Init（GPIOA, &GPIO_InitStructure）；
+
+}
+void InitialPinInPutConfig( )
+{
+  GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9； //超音波Echo 響應
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+
+
+
+void InitialConfig( )
+{
+  GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_3； //STM32 送出Trigger 波至Sensor
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP；
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+
+
+
+void InitialConfig1( )//STM32 GPIO
+{
+  GPIO_InitTypeDef GPIO_InitStructure；
+  RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；//致能週邊時鐘
+  GPIO_InitStructure.GPIO_Pin=GPIO_Pin_8； // STM32 送出Trigger 波至Sensor
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz；
+  GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU；
+  //設定GPIO 腳位的工作狀態為推輓輸出
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP；
+  GPIO_Init（GPIOB,&GPIO_InitStructure）；
+}
+4 位元共有0~65535 個脈波變化觸發GPIO
+const uint16_t kSteppersHighPin[4] =
+{
+  GPIO_Pin_0 | GPIO_Pin_1,
+  GPIO_Pin_1 | GPIO_Pin_2,
+  GPIO_Pin_2 | GPIO_Pin_3,
+  GPIO_Pin_3 | GPIO_Pin_0
+}；
+4 位元共有0~65535 個脈波變化觸發GPIO
+const uint16_t kSteppersLowPin[4] =
+{
+  GPIO_Pin_1 | GPIO_Pin_2,
+  GPIO_Pin_2 | GPIO_Pin_3,
+  GPIO_Pin_3 | GPIO_Pin_0,
+  GPIO_Pin_0 | GPIO_Pin_1,
+}；
+
+
+
+enum StepDir//馬達正逆轉函數
+
+{
+  ccwStep = 0, //馬達逆轉
+  cwStep = 1, //馬達正轉
+}；
+
+void NextStep（enum StepDir direction）
+{
+static int stepCount = 0；//宣告靜態變數
+if（ direction == ccwStep）
+stepCount++；
+else
+stepCount+=3；
+stepCount = stepCount%4；
+  GPIO_SetBits（GPIOA,kSteppersHighPin[stepCount]）；
+GPIO_ResetBits（GPIOA,kSteppersLowPin[stepCount]）；
+}
+
+void RCC_Configuration（void）
+{
+
+SystemInit( )；//72m
+RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOA,ENABLE）；
+RCC_APB2PeriphClockCmd（RCC_APB2Periph_GPIOB,ENABLE）；
+RCC_APB2PeriphClockCmd（RCC_APB2Periph_USART1,ENABLE）；
+RCC_APB1PeriphClockCmd（RCC_APB1Periph_TIM2,ENABLE）；
+}
+
+
+
+//=============================================================
+//主程式
+//=============================================================
+
+int main（void）
+{
+int i = 0；
+LED_GPIO_Config( )；
+InitialMotorPinOutPutConfig( )；
+InitialMotorPinInPutConfig( )；
+InitialPinInPutConfig( )；
+InitialConfig( )；
+InitialConfig1( )；
+RCC_Configuration( )；
+USART1_Config( )；
+RTC_Init( )；
+SystemTick_Init( )；
+usDelay（6）；延遲6 微秒（讀者請斟酌調整延遲時間）
+
+while（1）
+//GPIO_ResetBits（GPIOB,GPIO_Pin_3）；
+
+  {
+  GPIO_SetBits（GPIOB,GPIO_Pin_3）；
+msDelay（20）；//延遲20 毫秒
+GPIO_ResetBits（GPIOB,GPIO_Pin_3）；
+  if（Right==1）
+  for（i = 0； i <1000； i++ ）
+  {
+ NextStep（ cwStep ）； //藉由cwStep 函式讓馬達以順時鐘旋轉
+msDelay（20）；
+ }
+GPIO_SetBits（GPIOB,GPIO_Pin_8）；
+msDelay（20）；
+GPIO_ResetBits（GPIOB,GPIO_Pin_8）；
+
+  if（ Left == 1）
+ for（i = 0； i <1000；i++）
+ {
+  NextStep（ ccwStep ）； //藉由ccwStep 函式讓馬達以逆時鐘旋轉
+  msDelay（20）；
+   }
+ }
+}
+/**********************************************************************
+                   ***********************************
+	END FILE
+***********************************************************************
+                   **********************************/

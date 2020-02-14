@@ -1,0 +1,41 @@
+#include "stm32f10x_lib.h"
+#include "stm32f10x_it.h"
+#include <stm32f10x.h>
+#include "delay.h"
+#include "lcd1602.h"
+#include "DebugLed.h"
+#include "string.h"
+
+stDispString displaySample = {0,0, "We Play 1602ALCD","This is a 
+                successful beginning!"}；設定跑馬燈文字
+
+void Initial( )
+{
+   /** Initialization ：
+   * - 1. Delay function
+   * - 2. LCD USING GPIO
+   * - 3. LCD1602
+   */
+   DelayInit( )； 
+   OnBoardLed_Initial( )；
+   LCD1602_GPIOConfig( )；
+   LCD1602_Iintial( )；
+}
+
+int main( )
+{
+   int index = 0；
+   Initial( )；
+LCD1602_SetString（ displaySample.x0,0,displaySample.line0）； //固定顯示在
+               第 0 列
+
+for（ index = 0； ； index++）//第1 列顯示跑馬燈文字
+   {
+    DBG_LED_TOGGLE( )；
+      LCD1602_SetString
+                 （ displaySample.x1,1,&displaySample.line1[index] ）；
+      if（ index == strlen（ displaySample.line1 ） - LCD1602_MAX_X ）
+    index = 0；
+      DelayMs（400）； //延遲400 毫秒
+   }
+}

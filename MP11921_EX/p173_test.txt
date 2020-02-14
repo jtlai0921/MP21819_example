@@ -1,0 +1,125 @@
+#include <Servo.h>
+
+/*
+PROJECT：遠端機器手臂控制平台
+BASED ON： Arduino And STM32
+PROGRAMMER：Chiou
+DATE： 2018/5/15
+
+#define Begin_CMD_CHAR ' '//起始字元為空一格
+#define End_CMD_CHAR '\n'結束字元為'\n'
+#define Div_CMD_CHAR ','分割起始字元為'\n'
+#define CHECK 1 // //假若不需要感測器資料串列輸出,請設定為'0'
+
+//定義伺服馬達變數
+Servo panServo；
+Servo tiltServo；
+Servo zaxixServo；
+
+int tiltVal = 0； //X 軸伺服馬達初始值
+int panVal = 0； //Y 軸伺服馬達初始值
+int zaxixVal = 0； //Z 軸伺服馬達初始值
+
+String inText；
+float value0, value1, value2；
+
+void setup( )
+{
+
+  //Arduino 伺服馬達控制腳位定義
+  panServo.attach（2）；X 軸訊號腳位
+  tiltServo.attach（3）；Y 軸訊號腳位
+  zaxixServo.attach（4）；Z 軸訊號腳位
+
+  Serial.begin（9600）； // HC-05 藍芽模組通訊傳輸預設鮑率
+  Serial.println（"\Arduino Pro Mini\n"）；
+  Serial.println（"Attitude Sensor Type： "）；
+  Serial.println（"ACCELEROMETER Information"）；
+  Serial.println（"Pan-Tilt- Roll Information"）；
+  Serial.println（"GYROSCOPE Information"）；
+  Serial.flush( )；
+}
+
+void loop( )
+{
+  Serial.flush( )；
+  int inCommand = 0；
+  char sensorType = 0；
+  char getChar = ' '； //讀取串列資料
+
+  // 等待準備進入的資料wait for incoming data
+  if （Serial.available( ) < 1） return； //如果串列資料是空的返回迴圈
+   getChar = Serial.read( )；// 剖析讀取的命令起始旗標字元
+  if （getChar != START_CMD_CHAR） return； //如果沒有命令起始旗標字元返回回圈
+
+  //剖析所讀取的腳位及數值
+
+  sensorType = Serial.read( )； // 判斷感測型態
+  value0 = Serial.parseFloat( )； // 第1 個Sensor 值
+  value1 = Serial.parseFloat( )； // 第2 個Sensor 值
+  value2 = Serial.parseFloat( )； // 第3 個Sensor 值
+
+
+  //傳輸Arduino 上藍芽模組所接收到的數值至Serial monitor/terminal
+  if （CHECK）
+  {
+    Serial.print（"Sensor type： "）；//輸出Sensor type：
+    Serial.println（sensorType）； //輸出Sensor type 型式
+    Serial.print（"Val[0]： "）；//輸出Val[0]：
+    Serial.println（value0）； //輸出Value0 數值
+    Serial.print（"Val[1]： "）；//輸出Val[1]：
+    Serial.println（value1）； //輸出Value1 數值
+    Serial.print（"Val[2]： "）；//輸出Val[2]：
+    Serial.println（value2）； //輸出Value2 數值
+    Serial.println（"********"）；
+
+// 檢查感測型態If not for Accelerometer （#1） then 忽略讀取值
+// 感測型態sensorType 若為1 是加速規的感測數值
+    if （sensorType !=1） return；
+  }
+
+     switch （sensorType） 判斷藍芽收到的空間訊號驅動各軸伺服馬達
+     {
+      case 'X'：
+
+        forward( )；
+        break；
+
+      case 'Y'：
+
+        back( )；
+        break；
+
+      case 'Z'：
+
+        right( )；
+        break；
+
+    delay（5）； //延遲5 秒
+  }
+ }
+
+void forward( )
+{
+  panVal = value0； //讀取加速規X 軸感測值
+  panVal = map（panVal, -7,8, 0, 179）；
+  //映射加速規X 軸感測值驅動Servor 馬達左右轉動
+  panServo.write（panVal）；
+  delay（5）；
+}
+
+void back( )
+{
+tiltVal = value1； //讀取加速規Y 軸感測值
+tiltVal = map（tiltVal, -7, 8, 0, 179）； //映射加速規Y 軸感測值來驅動揚升
+		Servor 馬達
+  tiltServo.write（tiltVal）；
+  delay（5）；
+  }
+void right( )
+{
+ zaxixVal = value2；//讀取加速規Z 軸感測值
+ zaxixVal = map（zaxixVal, -7, 8, 0, 179）； //映射加速規Z 軸感測值來驅動
+		Servor 馬達 zaxixServo.write（zaxixVal）；
+delay（5）；
+}

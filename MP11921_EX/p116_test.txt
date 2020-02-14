@@ -1,0 +1,117 @@
+#ifndef LCD1602_STM32_H
+//假設還未定義LCD1602_STM32_H 之情況下，就將以下的定義編譯進去
+#define LCD1602_STM32_H
+#include "string.h"
+
+/** GPIO 初始值設定 */
+/*
+>>> //控制Ping 腳位 <<<
+  - //控制Ping 腳位使用相同GPIO Group
+*/
+#define LCD_CTRL_IO 	GPIOA
+#define LCD_CTRL_RCC 	RCC_APB2Periph_GPIOA
+#define LCD_RS 		GPIO_Pin_9
+#define LCD_RW 		GPIO_Pin_10
+#define LCD_EN 		GPIO_Pin_11
+
+/**
+//資料通訊阜
+//資料通訊阜使用同樣的GPIO 群組
+*/
+#define LCD_DATA_IO	GPIOB
+#define LCD_DATA_RCC 	RCC_APB2Periph_GPIOB//定義周邊匯流排時脈名稱
+
+//定義控制LCD 液晶模組資料匯流排的腳位
+#define LCD_D0 		GPIO_Pin_5
+#define LCD_D1 		GPIO_Pin_6
+#define LCD_D2 		GPIO_Pin_7
+#define LCD_D3 		GPIO_Pin_8
+#define LCD_D4 		GPIO_Pin_9
+#define LCD_D5 		GPIO_Pin_12
+#define LCD_D6 		GPIO_Pin_13
+#define LCD_D7 		GPIO_Pin_14
+
+/***/
+#define LCD_DP_ALL
+                 （LCD_D0|LCD_D1|LCD_D2|LCD_D3|LCD_D4|LCD_D5|LCD_D6|LC
+                D_D7）
+#define LCD_RESET_DP( ) 	{LCD_DATA_IO->BRR = LCD_DP_ALL；}
+
+/** GPIO 控制腳位定義 */
+#define LCD_RS_HI 	LCD_CTRL_IO->BSRR=LCD_RS
+#define LCD_RS_LO 	LCD_CTRL_IO->BRR =LCD_RS
+
+#define LCD_RW_HI 	LCD_CTRL_IO->BSRR=LCD_RW
+#define LCD_RW_LO 	LCD_CTRL_IO->BRR =LCD_RW
+
+#define LCD_EN_HI 	LCD_CTRL_IO->BSRR=LCD_EN
+#define LCD_EN_LO 	LCD_CTRL_IO->BRR =LCD_EN
+
+/*
+#define LCD_D0_HI 	LCD_DATA_IO->BSRR=LCD_D0
+#define LCD_D1_HI 	LCD_DATA_IO->BSRR=LCD_D1
+#define LCD_D2_HI 	LCD_DATA_IO->BSRR=LCD_D2
+#define LCD_D3_HI 	LCD_DATA_IO->BSRR=LCD_D3
+#define LCD_D4_HI 	LCD_DATA_IO->BSRR=LCD_D4
+#define LCD_D5_HI 	LCD_DATA_IO->BSRR=LCD_D5
+#define LCD_D6_HI 	LCD_DATA_IO->BSRR=LCD_D6
+#define LCD_D7_HI 	LCD_DATA_IO->BSRR=LCD_D7
+
+#define LCD_D0_LO 	LCD_DATA_IO->BRR=LCD_D0
+#define LCD_D1_LO 	LCD_DATA_IO->BRR=LCD_D1
+#define LCD_D2_LO 	LCD_DATA_IO->BRR=LCD_D2
+#define LCD_D3_LO 	LCD_DATA_IO->BRR=LCD_D3
+#define LCD_D4_LO 	LCD_DATA_IO->BRR=LCD_D4
+#define LCD_D5_LO 	LCD_DATA_IO->BRR=LCD_D5
+#define LCD_D6_LO 	LCD_DATA_IO->BRR=LCD_D6
+#define LCD_D7_LO 	LCD_DATA_IO->BRR=LCD_D7
+*/
+
+
+
+/** 常數初始值設定 */
+#define LCD1602_MAX_X 0x0F
+#define LCD_FUN_SET 	0x38 ///< 8 bit, 2 lines, 5*8 dot
+#define LCD_DISP_OFF 	0x08 ///< Display Off
+#define LCD_DISP_CLR 	0x01 ///< Clear Display
+#define LCD_MODE_SET 	0x06 ///< Addr increase and no shift
+#define LCD_DISP_ON 	     0x0C ///< Display, Curse and blink on.
+
+/**巨集程式*/
+#define LCD1602_ClearDisp( )
+LCD1602_WriteCommand（ LCD_DISP_CLR ）；
+DelayMs（2）；
+#define LCD1602_AddrCmd（posX,posY） （（posY?0xC0：0x80）+posX）
+
+/** 型態定義 */
+typedef unsigned char BYTE；
+typedef struct dispStr
+{
+  BYTE x0,x1；
+  char *line0,*line1；
+}stDispString；
+
+/** 功能函數*/
+
+/** 設定STM32F103 GPIO*/
+void LCD1602_GPIOConfig（ void ）；
+
+/** 釋放所有通訊埠並設定資料位元組*/
+void LCD1602_SetDataPort（ BYTE dat ）；
+
+/** 傳送命令 */
+
+void LCD1602_Write（ BYTE input, BYTE isCommand ）；
+
+/**傳送命令*/
+void LCD1602_WriteCommand（ BYTE cmd ）；
+
+void LCD1602_WriteData（ BYTE dat ）； /**傳送資料*/
+
+void LCD1602_Iintial（ void ）； /** 初始化LCD */
+
+void LCD1602_SetChar（ BYTE x, BYTE y, char c ）； /** 寫入字元到指定位置*/
+
+void LCD1602_SetString（ BYTE x, BYTE y, char str[]）；/**寫入字串到指定位置
+		*/
+#endif
